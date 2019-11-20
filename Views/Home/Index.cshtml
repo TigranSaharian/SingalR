@@ -1,0 +1,67 @@
+﻿<div id="userNameBlock">
+    Type username:<br />
+    <input id="userName" type="text" />
+    <input id="loginBtn" type="button" value="Confirm" />
+</div>
+<br />
+
+<div id="header"></div>
+<br />
+
+<div id="inputForm">
+    <input type="text" id="message" />
+    <input type="button" id="sendBtn" value="Send" />
+</div>
+@if (User.IsInRole("admin"))
+{
+    <br /><div id="notifyForm">
+        <input type="text" id="notify" />
+        <input type="button" id="notifyBtn" value="Уведомление" />
+    </div>
+}
+
+<div id="chatroom"></div>
+
+<script src="~/js/signalr/dist/browser/signalr.min.js"></script>
+<script>
+    let hubUrl = "/chat";
+    const hubConnection = new signalR.HubConnectionBuilder()
+        .withUrl(hubUrl)
+        .build();
+ 
+    let userName = "";
+    hubConnection.on("Receive", function (message, userName) {
+
+         let userNameElem = document.createElement("b");
+        userNameElem.appendChild(document.createTextNode(userName + ": "));
+ 
+        let elem = document.createElement("p");
+        elem.appendChild(userNameElem);
+        elem.appendChild(document.createTextNode(message));
+ 
+        var firstElem = document.getElementById("chatroom").firstChild;
+        document.getElementById("chatroom").insertBefore(elem, firstElem);
+ 
+    });
+
+     document.getElementById("loginBtn").addEventListener("click", function (e) {
+        userName = document.getElementById("userName").value;
+        document.getElementById("header").innerHTML = "<h3>Welcome " + userName + "</h3>";
+     });
+
+    document.getElementById("sendBtn").addEventListener("click", function (e) {
+        let message = document.getElementById("message").value;
+        hubConnection.invoke("Notify", message, userName);
+    });
+
+    @if (User.IsInRole("admin"))
+    {
+        <text>
+        document.getElementById("notifyBtn").addEventListener("click", function(e) {
+            let message = document.getElementById("notify").value;
+            hubConnection.invoke("Notify", message, userName);
+        });
+        </text>
+    }
+    hubConnection.start();
+</script>
